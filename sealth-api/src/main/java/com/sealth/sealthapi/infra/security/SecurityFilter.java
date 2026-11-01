@@ -1,6 +1,5 @@
 package com.sealth.sealthapi.infra.security;
 
-import com.sealth.sealthapi.domain.user.User;
 import com.sealth.sealthapi.repositories.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -18,6 +17,8 @@ import java.util.Collections;
 
 @Component
 public class SecurityFilter extends OncePerRequestFilter {
+    private static final String BEARER_PREFIX = "Bearer ";
+
     @Autowired
     TokenService tokenService;
     @Autowired
@@ -26,20 +27,24 @@ public class SecurityFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         var token = this.recoverToken(request);
-        var login = tokenService.validateToken(token);
 
-        if(login != null){
-            User user = userRepository.findById(login).orElseThrow(() -> new RuntimeException("Não Autorizado"));
-            var authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
-            var authentication = new UsernamePasswordAuthenticationToken(user, null, authorities);
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+        if (token != null) {
+            var userId = tokenService.validateToken(token);
+            if (userId != null) {
+                // Usuário inexistente (ex.: banco reiniciado) segue sem autenticação e resulta em 401.
+                userRepository.findById(userId).ifPresent(user -> {
+                    var authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+                    var authentication = new UsernamePasswordAuthenticationToken(user, null, authorities);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                });
+            }
         }
         filterChain.doFilter(request, response);
     }
 
-    private String recoverToken(HttpServletRequest request){
+    private String recoverToken(HttpServletRequest request) {
         var authHeader = request.getHeader("Authorization");
-        if(authHeader == null) return null;
-        return authHeader.replace("Bearer ", "");
+        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) return null;
+        return authHeader.substring(BEARER_PREFIX.length());
     }
 }

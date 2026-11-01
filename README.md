@@ -16,16 +16,24 @@ O backend do SEALTH é construído utilizando as seguintes tecnologias:
 
 ### Banco de Dados
 
-O backend do SEALTH utiliza um banco de dados baseado em arquivos JSON para armazenar os dados. Essa abordagem foi escolhida por sua simplicidade e facilidade de configuração, adequada para projetos de escala média.
+O backend utiliza um banco H2 em memória (`jdbc:h2:mem:testdb`): o schema é gerado pelo Hibernate a cada inicialização e os dados são perdidos ao reiniciar a aplicação.
+
+### Configuração
+
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `JWT_SECRET` | valor de desenvolvimento | Segredo usado para assinar os tokens JWT (defina em produção) |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:4200` | Origens permitidas, separadas por vírgula |
 
 ## Instalação
 
-Para executar o frontend do SEALTH localmente, siga estas etapas:
+Para executar o backend do SEALTH localmente (requer JDK 17+), siga estas etapas:
 
 1. Clone este repositório para o seu ambiente de desenvolvimento
-2. Navegue até o diretório do projeto
-3. Instale as dependências do projeto
-4. Inicie o servidor
+2. Navegue até `sealth-api`
+3. Execute `./mvnw spring-boot:run` (a API sobe em `http://localhost:8080`)
+
+Os erros da API seguem o formato `{timestamp, status, error, message, fieldErrors?}`.
 
 ## Contribuições
 

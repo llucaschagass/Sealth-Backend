@@ -1,53 +1,32 @@
 package com.sealth.sealthapi.controllers;
 
-import com.sealth.sealthapi.domain.user.User;
 import com.sealth.sealthapi.dto.LoginRequestDTO;
 import com.sealth.sealthapi.dto.RegisterRequestDTO;
 import com.sealth.sealthapi.dto.ResponseDTO;
-import com.sealth.sealthapi.infra.security.TokenService;
-import com.sealth.sealthapi.repositories.UserRepository;
-import lombok.RequiredArgsConstructor;
+import com.sealth.sealthapi.services.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Optional;
-
 @RestController
 @RequestMapping("/auth")
-@RequiredArgsConstructor
 public class AuthController {
-    private final UserRepository repository;
-    private final PasswordEncoder passwordEncoder;
-    private final TokenService tokenService;
+    private final AuthService authService;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
 
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody LoginRequestDTO body){
-        User user = this.repository.findByEmail(body.email()).orElseThrow(() -> new RuntimeException("User not found"));
-        if(passwordEncoder.matches(body.password(), user.getPassword())) {
-            String token = this.tokenService.generateToken(user);
-            return ResponseEntity.ok(new ResponseDTO(user.getName(), token, user.getId()));
-        }
-        return ResponseEntity.badRequest().build();
+    public ResponseEntity<ResponseDTO> login(@Valid @RequestBody LoginRequestDTO body) {
+        return ResponseEntity.ok(authService.login(body));
     }
 
     @PostMapping("/register")
-    public ResponseEntity register(@RequestBody RegisterRequestDTO body){
-        Optional<User> user = this.repository.findByEmail(body.email());
-
-        if(user.isEmpty()) {
-            User newUser = new User();
-            newUser.setPassword(passwordEncoder.encode(body.password()));
-            newUser.setEmail(body.email());
-            newUser.setName(body.name());
-            this.repository.save(newUser);
-
-            String token = this.tokenService.generateToken(newUser);
-            return ResponseEntity.ok(new ResponseDTO(newUser.getName(), token, newUser.getId()));
-        }
-        return ResponseEntity.badRequest().build();
+    public ResponseEntity<ResponseDTO> register(@Valid @RequestBody RegisterRequestDTO body) {
+        return ResponseEntity.ok(authService.register(body));
     }
 }
