@@ -34,6 +34,18 @@ Para executar o backend do SEALTH localmente (requer JDK 17+), siga estas etapas
 2. Navegue até `sealth-api`
 3. Execute `./mvnw spring-boot:run` (a API sobe em `http://localhost:8080`)
 
+### Documentação (Swagger)
+
+Com a API no ar, acesse `http://localhost:8080/swagger-ui.html` (especificação em `/v3/api-docs`). Para testar endpoints protegidos, faça login em `/auth/login` e informe o token em **Authorize**.
+
+### Testes e cobertura
+
+```
+./mvnw test
+```
+
+O relatório de cobertura (JaCoCo) é gerado em `target/site/jacoco/index.html`.
+
 Os erros da API seguem o formato `{timestamp, status, error, message, fieldErrors?}`.
 
 ## Contribuições
