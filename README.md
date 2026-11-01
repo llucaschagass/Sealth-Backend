@@ -23,6 +23,7 @@ O backend utiliza um banco H2 em memória (`jdbc:h2:mem:testdb`): o schema é ge
 | Variável | Padrão | Descrição |
 |---|---|---|
 | `JWT_SECRET` | valor de desenvolvimento | Segredo usado para assinar os tokens JWT (defina em produção) |
+| `SEED_ENABLED` | `true` | Carrega dados de demonstração ao iniciar (`demo@sealth.com` e `maria@sealth.com`, senha `123456`) |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:4200` | Origens permitidas, separadas por vírgula |
 
 ## Instalação
