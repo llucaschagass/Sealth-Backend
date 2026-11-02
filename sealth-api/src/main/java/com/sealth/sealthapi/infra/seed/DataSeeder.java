@@ -4,9 +4,11 @@ import com.sealth.sealthapi.domain.appointment.Appointment;
 import com.sealth.sealthapi.domain.health.HealthRecord;
 import com.sealth.sealthapi.domain.medication.Medication;
 import com.sealth.sealthapi.domain.user.User;
+import com.sealth.sealthapi.domain.vaccine.VaccinationRecord;
 import com.sealth.sealthapi.repositories.AppointmentRepository;
 import com.sealth.sealthapi.repositories.HealthRecordRepository;
 import com.sealth.sealthapi.repositories.MedicationRepository;
+import com.sealth.sealthapi.repositories.VaccinationRecordRepository;
 import com.sealth.sealthapi.repositories.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,15 +42,17 @@ public class DataSeeder implements ApplicationRunner {
     private final AppointmentRepository appointmentRepository;
     private final HealthRecordRepository healthRecordRepository;
     private final MedicationRepository medicationRepository;
+    private final VaccinationRecordRepository vaccinationRecordRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataSeeder(UserRepository userRepository, AppointmentRepository appointmentRepository,
                       HealthRecordRepository healthRecordRepository, MedicationRepository medicationRepository,
-                      PasswordEncoder passwordEncoder) {
+                      VaccinationRecordRepository vaccinationRecordRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.appointmentRepository = appointmentRepository;
         this.healthRecordRepository = healthRecordRepository;
         this.medicationRepository = medicationRepository;
+        this.vaccinationRecordRepository = vaccinationRecordRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -75,11 +79,28 @@ public class DataSeeder implements ApplicationRunner {
         createMedication(demo, "Metformina", "850 mg", List.of("08:00", "20:00"), today.minusDays(40), null, "Junto às refeições");
         createMedication(demo, "Amoxicilina", "500 mg", List.of("06:00", "14:00", "22:00"), today.minusDays(20), today.minusDays(13), null);
 
+        // com 30 anos: dT com reforço vencido, febre amarela pendente e gripe com reforço previsto para os próximos dias
+        createVaccination(demo, "hepatite-b", today.minusYears(12));
+        createVaccination(demo, "hepatite-b", today.minusYears(12).plusMonths(1));
+        createVaccination(demo, "hepatite-b", today.minusYears(12).plusMonths(6));
+        createVaccination(demo, "dt", today.minusYears(15));
+        createVaccination(demo, "dt", today.minusYears(15).plusMonths(2));
+        createVaccination(demo, "dt", today.minusYears(11));
+        createVaccination(demo, "influenza", today.minusMonths(12).plusDays(10));
+
         User maria = createUser("Maria Souza", SECOND_EMAIL);
         createAppointment(maria, today.plusDays(7), null, null, "Dr. Costa", "Oftalmologia", "Clínica Visão - Contagem", "Exame de vista");
 
         log.info("Seed carregado. Login de demonstração: {} / {} (segundo usuário: {} / {})",
                 DEMO_EMAIL, DEMO_PASSWORD, SECOND_EMAIL, DEMO_PASSWORD);
+    }
+
+    private void createVaccination(User owner, String vaccineCode, LocalDate takenAt) {
+        VaccinationRecord record = new VaccinationRecord();
+        record.setOwner(owner);
+        record.setVaccineCode(vaccineCode);
+        record.setTakenAt(takenAt);
+        vaccinationRecordRepository.save(record);
     }
 
     private void createMedication(User owner, String name, String dosage, List<String> times, LocalDate startDate,

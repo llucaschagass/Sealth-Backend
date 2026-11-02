@@ -26,6 +26,21 @@ O backend utiliza um banco H2 em memória (`jdbc:h2:mem:testdb`): o schema é ge
 | `SEED_ENABLED` | `true` | Carrega dados de demonstração ao iniciar (`demo@sealth.com` e `maria@sealth.com`, senha `123456`) |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:4200` | Origens permitidas, separadas por vírgula |
 
+## Rotas
+
+Todas exigem token JWT, exceto `/auth/login` e `/auth/register`. Os dados são sempre do usuário autenticado (acessar o recurso de outro usuário devolve 404). Os detalhes de cada rota estão no Swagger.
+
+| Recurso | Rotas |
+|---|---|
+| Autenticação | `POST /auth/register`, `POST /auth/login` |
+| Usuário | `GET /user/{id}`, `PUT /user/update/{id}` (só o próprio usuário) |
+| Consultas | `POST /appointments/create`, `GET /appointments/all`, `PUT /appointments/{id}/update`, `DELETE /appointments/{id}/cancel`, `GET /appointments/reminders` (horário e lembrete opcionais) |
+| Saúde | `GET /health/defaults`, `POST/GET /health/records`, `GET /health/records/latest`, `DELETE /health/records/{id}` |
+| Medicamentos | `GET /medicines/pdf` (bulas), `POST/GET /medicines/mine`, `PUT/DELETE /medicines/mine/{id}` |
+| Vacinas | `GET /vaccines` (calendário e situação), `GET /vaccines/alerts`, `POST/GET /vaccines/records`, `DELETE /vaccines/records/{id}` |
+
+O calendário de vacinação é um resumo informativo (`VaccineCatalog`) e não substitui a orientação de um profissional de saúde.
+
 ## Instalação
 
 Para executar o backend do SEALTH localmente (requer JDK 17+), siga estas etapas:

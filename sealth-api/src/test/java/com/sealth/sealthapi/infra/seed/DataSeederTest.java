@@ -5,6 +5,7 @@ import com.sealth.sealthapi.domain.user.User;
 import com.sealth.sealthapi.repositories.AppointmentRepository;
 import com.sealth.sealthapi.repositories.HealthRecordRepository;
 import com.sealth.sealthapi.repositories.MedicationRepository;
+import com.sealth.sealthapi.repositories.VaccinationRecordRepository;
 import com.sealth.sealthapi.repositories.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,11 +33,13 @@ class DataSeederTest extends IntegrationTestBase {
     @Autowired
     private MedicationRepository medicationRepository;
     @Autowired
+    private VaccinationRecordRepository vaccinationRecordRepository;
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private DataSeeder seeder() {
         return new DataSeeder(userRepository, appointmentRepository, healthRecordRepository, medicationRepository,
-                passwordEncoder);
+                vaccinationRecordRepository, passwordEncoder);
     }
 
     @Test
@@ -102,12 +105,26 @@ class DataSeederTest extends IntegrationTestBase {
     }
 
     @Test
+    void seedGivesTheDemoUserVaccinationRecordsAndOthersNone() {
+        seeder().run(null);
+
+        User demo = userRepository.findByEmail(DataSeeder.DEMO_EMAIL).orElseThrow();
+        var records = vaccinationRecordRepository.findByOwnerIdOrderByTakenAtDescIdDesc(demo.getId());
+        assertEquals(7, records.size());
+        assertTrue(records.stream().noneMatch(r -> r.getTakenAt().isAfter(LocalDate.now())));
+
+        User maria = userRepository.findByEmail(DataSeeder.SECOND_EMAIL).orElseThrow();
+        assertTrue(vaccinationRecordRepository.findByOwnerIdOrderByTakenAtDescIdDesc(maria.getId()).isEmpty());
+    }
+
+    @Test
     void runningSeedTwiceDoesNotDuplicateData() {
         seeder().run(null);
         long users = userRepository.count();
         long appointments = appointmentRepository.count();
         long healthRecords = healthRecordRepository.count();
         long medications = medicationRepository.count();
+        long vaccinations = vaccinationRecordRepository.count();
 
         seeder().run(null);
 
@@ -115,6 +132,7 @@ class DataSeederTest extends IntegrationTestBase {
         assertEquals(appointments, appointmentRepository.count());
         assertEquals(healthRecords, healthRecordRepository.count());
         assertEquals(medications, medicationRepository.count());
+        assertEquals(vaccinations, vaccinationRecordRepository.count());
         assertFalse(userRepository.findByEmail(DataSeeder.DEMO_EMAIL).isEmpty());
     }
 }
