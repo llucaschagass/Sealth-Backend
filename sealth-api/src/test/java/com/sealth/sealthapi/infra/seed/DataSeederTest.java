@@ -4,6 +4,7 @@ import com.sealth.sealthapi.IntegrationTestBase;
 import com.sealth.sealthapi.domain.user.User;
 import com.sealth.sealthapi.repositories.AppointmentRepository;
 import com.sealth.sealthapi.repositories.HealthRecordRepository;
+import com.sealth.sealthapi.repositories.MedicationRepository;
 import com.sealth.sealthapi.repositories.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,10 +30,13 @@ class DataSeederTest extends IntegrationTestBase {
     @Autowired
     private HealthRecordRepository healthRecordRepository;
     @Autowired
+    private MedicationRepository medicationRepository;
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private DataSeeder seeder() {
-        return new DataSeeder(userRepository, appointmentRepository, healthRecordRepository, passwordEncoder);
+        return new DataSeeder(userRepository, appointmentRepository, healthRecordRepository, medicationRepository,
+                passwordEncoder);
     }
 
     @Test
@@ -72,17 +76,33 @@ class DataSeederTest extends IntegrationTestBase {
     }
 
     @Test
+    void seedGivesTheDemoUserMedicationsIncludingAFinishedOne() {
+        seeder().run(null);
+
+        User demo = userRepository.findByEmail(DataSeeder.DEMO_EMAIL).orElseThrow();
+        var medications = medicationRepository.findByOwnerIdOrderByNameAsc(demo.getId());
+        assertEquals(3, medications.size());
+        assertTrue(medications.stream().anyMatch(m -> m.getEndDate() != null && m.getEndDate().isBefore(LocalDate.now())));
+        assertTrue(medications.stream().allMatch(m -> !m.getTimes().isEmpty()));
+
+        User maria = userRepository.findByEmail(DataSeeder.SECOND_EMAIL).orElseThrow();
+        assertTrue(medicationRepository.findByOwnerIdOrderByNameAsc(maria.getId()).isEmpty());
+    }
+
+    @Test
     void runningSeedTwiceDoesNotDuplicateData() {
         seeder().run(null);
         long users = userRepository.count();
         long appointments = appointmentRepository.count();
         long healthRecords = healthRecordRepository.count();
+        long medications = medicationRepository.count();
 
         seeder().run(null);
 
         assertEquals(users, userRepository.count());
         assertEquals(appointments, appointmentRepository.count());
         assertEquals(healthRecords, healthRecordRepository.count());
+        assertEquals(medications, medicationRepository.count());
         assertFalse(userRepository.findByEmail(DataSeeder.DEMO_EMAIL).isEmpty());
     }
 }

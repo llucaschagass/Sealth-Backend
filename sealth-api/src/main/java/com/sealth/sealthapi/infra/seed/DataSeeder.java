@@ -2,9 +2,11 @@ package com.sealth.sealthapi.infra.seed;
 
 import com.sealth.sealthapi.domain.appointment.Appointment;
 import com.sealth.sealthapi.domain.health.HealthRecord;
+import com.sealth.sealthapi.domain.medication.Medication;
 import com.sealth.sealthapi.domain.user.User;
 import com.sealth.sealthapi.repositories.AppointmentRepository;
 import com.sealth.sealthapi.repositories.HealthRecordRepository;
+import com.sealth.sealthapi.repositories.MedicationRepository;
 import com.sealth.sealthapi.repositories.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 /**
  * Popula o banco em memória com dados de demonstração a cada inicialização.
@@ -35,13 +38,16 @@ public class DataSeeder implements ApplicationRunner {
     private final UserRepository userRepository;
     private final AppointmentRepository appointmentRepository;
     private final HealthRecordRepository healthRecordRepository;
+    private final MedicationRepository medicationRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataSeeder(UserRepository userRepository, AppointmentRepository appointmentRepository,
-                      HealthRecordRepository healthRecordRepository, PasswordEncoder passwordEncoder) {
+                      HealthRecordRepository healthRecordRepository, MedicationRepository medicationRepository,
+                      PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.appointmentRepository = appointmentRepository;
         this.healthRecordRepository = healthRecordRepository;
+        this.medicationRepository = medicationRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -64,11 +70,28 @@ public class DataSeeder implements ApplicationRunner {
         createHealthRecord(demo, now.minus(30, ChronoUnit.DAYS), 76.2, 175, 30, "masculino", 128, 84);
         createHealthRecord(demo, now.minus(2, ChronoUnit.DAYS), 74.8, 175, 30, "masculino", 120, 80);
 
+        createMedication(demo, "Losartana", "50 mg", List.of("08:00"), today.minusDays(90), null, "Tomar em jejum");
+        createMedication(demo, "Metformina", "850 mg", List.of("08:00", "20:00"), today.minusDays(40), null, "Junto às refeições");
+        createMedication(demo, "Amoxicilina", "500 mg", List.of("06:00", "14:00", "22:00"), today.minusDays(20), today.minusDays(13), null);
+
         User maria = createUser("Maria Souza", SECOND_EMAIL);
         createAppointment(maria, today.plusDays(7), "Dr. Costa", "Oftalmologia", "Clínica Visão - Contagem", "Exame de vista");
 
         log.info("Seed carregado. Login de demonstração: {} / {} (segundo usuário: {} / {})",
                 DEMO_EMAIL, DEMO_PASSWORD, SECOND_EMAIL, DEMO_PASSWORD);
+    }
+
+    private void createMedication(User owner, String name, String dosage, List<String> times, LocalDate startDate,
+                                  LocalDate endDate, String notes) {
+        Medication medication = new Medication();
+        medication.setOwner(owner);
+        medication.setName(name);
+        medication.setDosage(dosage);
+        medication.setTimes(times);
+        medication.setStartDate(startDate);
+        medication.setEndDate(endDate);
+        medication.setNotes(notes);
+        medicationRepository.save(medication);
     }
 
     private void createHealthRecord(User owner, Instant measuredAt, double weightKg, double heightCm, int age,
