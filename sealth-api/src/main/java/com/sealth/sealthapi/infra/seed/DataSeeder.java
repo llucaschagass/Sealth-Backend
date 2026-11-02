@@ -1,8 +1,10 @@
 package com.sealth.sealthapi.infra.seed;
 
 import com.sealth.sealthapi.domain.appointment.Appointment;
+import com.sealth.sealthapi.domain.health.HealthRecord;
 import com.sealth.sealthapi.domain.user.User;
 import com.sealth.sealthapi.repositories.AppointmentRepository;
+import com.sealth.sealthapi.repositories.HealthRecordRepository;
 import com.sealth.sealthapi.repositories.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +14,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 /**
  * Popula o banco em memória com dados de demonstração a cada inicialização.
@@ -30,11 +34,14 @@ public class DataSeeder implements ApplicationRunner {
 
     private final UserRepository userRepository;
     private final AppointmentRepository appointmentRepository;
+    private final HealthRecordRepository healthRecordRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public DataSeeder(UserRepository userRepository, AppointmentRepository appointmentRepository, PasswordEncoder passwordEncoder) {
+    public DataSeeder(UserRepository userRepository, AppointmentRepository appointmentRepository,
+                      HealthRecordRepository healthRecordRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.appointmentRepository = appointmentRepository;
+        this.healthRecordRepository = healthRecordRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -52,11 +59,30 @@ public class DataSeeder implements ApplicationRunner {
         createAppointment(demo, today.plusDays(15), "Dr. Almeida", "Dermatologia", "Clínica Bem Estar - BH", "Levar exames anteriores");
         createAppointment(demo, today.plusDays(45), "Dra. Lima", "Clínico Geral", "UBS Centro", null);
 
+        Instant now = Instant.now();
+        createHealthRecord(demo, now.minus(60, ChronoUnit.DAYS), 78.5, 175, 30, "masculino", null, null);
+        createHealthRecord(demo, now.minus(30, ChronoUnit.DAYS), 76.2, 175, 30, "masculino", 128, 84);
+        createHealthRecord(demo, now.minus(2, ChronoUnit.DAYS), 74.8, 175, 30, "masculino", 120, 80);
+
         User maria = createUser("Maria Souza", SECOND_EMAIL);
         createAppointment(maria, today.plusDays(7), "Dr. Costa", "Oftalmologia", "Clínica Visão - Contagem", "Exame de vista");
 
         log.info("Seed carregado. Login de demonstração: {} / {} (segundo usuário: {} / {})",
                 DEMO_EMAIL, DEMO_PASSWORD, SECOND_EMAIL, DEMO_PASSWORD);
+    }
+
+    private void createHealthRecord(User owner, Instant measuredAt, double weightKg, double heightCm, int age,
+                                    String sex, Integer systolic, Integer diastolic) {
+        HealthRecord record = new HealthRecord();
+        record.setOwner(owner);
+        record.setMeasuredAt(measuredAt);
+        record.setWeightKg(weightKg);
+        record.setHeightCm(heightCm);
+        record.setAge(age);
+        record.setSex(sex);
+        record.setSystolic(systolic);
+        record.setDiastolic(diastolic);
+        healthRecordRepository.save(record);
     }
 
     private User createUser(String name, String email) {

@@ -3,6 +3,7 @@ package com.sealth.sealthapi.infra.seed;
 import com.sealth.sealthapi.IntegrationTestBase;
 import com.sealth.sealthapi.domain.user.User;
 import com.sealth.sealthapi.repositories.AppointmentRepository;
+import com.sealth.sealthapi.repositories.HealthRecordRepository;
 import com.sealth.sealthapi.repositories.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,10 +27,12 @@ class DataSeederTest extends IntegrationTestBase {
     @Autowired
     private AppointmentRepository appointmentRepository;
     @Autowired
+    private HealthRecordRepository healthRecordRepository;
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private DataSeeder seeder() {
-        return new DataSeeder(userRepository, appointmentRepository, passwordEncoder);
+        return new DataSeeder(userRepository, appointmentRepository, healthRecordRepository, passwordEncoder);
     }
 
     @Test
@@ -55,15 +58,31 @@ class DataSeederTest extends IntegrationTestBase {
     }
 
     @Test
+    void seedGivesTheDemoUserAHealthHistoryAndOthersNone() {
+        seeder().run(null);
+
+        User demo = userRepository.findByEmail(DataSeeder.DEMO_EMAIL).orElseThrow();
+        var records = healthRecordRepository.findByOwnerIdOrderByMeasuredAtDescIdDesc(demo.getId());
+        assertEquals(3, records.size());
+        assertEquals(74.8, records.get(0).getWeightKg());
+        assertEquals(78.5, records.get(2).getWeightKg());
+
+        User maria = userRepository.findByEmail(DataSeeder.SECOND_EMAIL).orElseThrow();
+        assertTrue(healthRecordRepository.findByOwnerIdOrderByMeasuredAtDescIdDesc(maria.getId()).isEmpty());
+    }
+
+    @Test
     void runningSeedTwiceDoesNotDuplicateData() {
         seeder().run(null);
         long users = userRepository.count();
         long appointments = appointmentRepository.count();
+        long healthRecords = healthRecordRepository.count();
 
         seeder().run(null);
 
         assertEquals(users, userRepository.count());
         assertEquals(appointments, appointmentRepository.count());
+        assertEquals(healthRecords, healthRecordRepository.count());
         assertFalse(userRepository.findByEmail(DataSeeder.DEMO_EMAIL).isEmpty());
     }
 }
