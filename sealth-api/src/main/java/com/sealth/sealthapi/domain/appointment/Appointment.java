@@ -4,6 +4,8 @@ import com.sealth.sealthapi.domain.user.User;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "appointments")
@@ -14,6 +16,14 @@ public class Appointment {
 
     @Column(name = "appointment_date", nullable = false)
     private LocalDate date;
+
+    /** Horário da consulta; opcional. */
+    @Column(name = "appointment_time")
+    private LocalTime time;
+
+    /** Antecedência do lembrete em minutos; opcional e só vale com horário. */
+    @Column(name = "reminder_minutes")
+    private Integer reminderMinutes;
 
     @Column(name = "doctor", nullable = false)
     private String doctor;
@@ -43,6 +53,24 @@ public class Appointment {
         return date;
     }
 
+    public LocalTime getTime() {
+        return time;
+    }
+
+    public Integer getReminderMinutes() {
+        return reminderMinutes;
+    }
+
+    /** Instante de início da consulta; nulo sem horário. */
+    public LocalDateTime getStartsAt() {
+        return time == null ? null : LocalDateTime.of(date, time);
+    }
+
+    /** Momento a partir do qual o lembrete vale; nulo sem horário ou sem lembrete. */
+    public LocalDateTime getReminderAt() {
+        return time == null || reminderMinutes == null ? null : getStartsAt().minusMinutes(reminderMinutes);
+    }
+
     public String getDoctor() {
         return doctor;
     }
@@ -70,6 +98,14 @@ public class Appointment {
 
     public void setDate(LocalDate date) {
         this.date = date;
+    }
+
+    public void setTime(LocalTime time) {
+        this.time = time;
+    }
+
+    public void setReminderMinutes(Integer reminderMinutes) {
+        this.reminderMinutes = reminderMinutes;
     }
 
     public void setDoctor(String doctor) {

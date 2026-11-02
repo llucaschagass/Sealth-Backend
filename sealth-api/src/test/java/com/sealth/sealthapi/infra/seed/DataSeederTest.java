@@ -62,6 +62,18 @@ class DataSeederTest extends IntegrationTestBase {
     }
 
     @Test
+    void seedGivesUpcomingDemoAppointmentsATimeAndOneActiveReminder() {
+        seeder().run(null);
+
+        User demo = userRepository.findByEmail(DataSeeder.DEMO_EMAIL).orElseThrow();
+        var appointments = appointmentRepository.findByOwnerIdOrderByDateAsc(demo.getId());
+        assertTrue(appointments.stream().anyMatch(a -> a.getTime() != null && a.getReminderMinutes() != null));
+        var now = java.time.LocalDateTime.now();
+        assertTrue(appointments.stream().anyMatch(a -> a.getReminderAt() != null
+                && !now.isBefore(a.getReminderAt()) && now.isBefore(a.getStartsAt())));
+    }
+
+    @Test
     void seedGivesTheDemoUserAHealthHistoryAndOthersNone() {
         seeder().run(null);
 

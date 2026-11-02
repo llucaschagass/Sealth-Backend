@@ -33,7 +33,7 @@ public class AppointmentController {
 
     @Operation(summary = "Cria uma consulta para o usuário autenticado")
     @ApiResponse(responseCode = "201", description = "Consulta criada")
-    @ApiResponse(responseCode = "400", description = "Dados inválidos (data no formato yyyy-MM-dd)", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    @ApiResponse(responseCode = "400", description = "Dados inválidos (data yyyy-MM-dd, horário HH:mm)", content = @Content(schema = @Schema(implementation = ApiError.class)))
     @PostMapping("/create")
     public ResponseEntity<AppointmentResponseDTO> createAppointment(@AuthenticationPrincipal User user,
                                                                     @Valid @RequestBody CreateAppointmentRequestDTO request) {
@@ -44,6 +44,12 @@ public class AppointmentController {
     @GetMapping("/all")
     public ResponseEntity<List<AppointmentResponseDTO>> getAllAppointments(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(appointmentService.getAppointments(user));
+    }
+
+    @Operation(summary = "Lista os lembretes em vigor: consultas com horário e lembrete configurado cujo aviso já valeu e que ainda não começaram")
+    @GetMapping("/reminders")
+    public ResponseEntity<List<AppointmentResponseDTO>> getDueReminders(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(appointmentService.getDueReminders(user));
     }
 
     @Operation(summary = "Atualiza uma consulta do usuário autenticado")

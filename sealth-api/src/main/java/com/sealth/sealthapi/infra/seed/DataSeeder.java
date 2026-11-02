@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -60,10 +61,10 @@ public class DataSeeder implements ApplicationRunner {
         LocalDate today = LocalDate.now();
 
         User demo = createUser("Usuário Demo", DEMO_EMAIL);
-        createAppointment(demo, today.minusDays(30), "Dr. Silva", "Cardiologia", "Hospital ABC - Contagem", "Retorno de rotina");
-        createAppointment(demo, today.plusDays(3), "Dra. Souza", "Ortopedia", "Hospital XYZ - Betim", "Dores nas costas");
-        createAppointment(demo, today.plusDays(15), "Dr. Almeida", "Dermatologia", "Clínica Bem Estar - BH", "Levar exames anteriores");
-        createAppointment(demo, today.plusDays(45), "Dra. Lima", "Clínico Geral", "UBS Centro", null);
+        createAppointment(demo, today.minusDays(30), LocalTime.of(9, 0), null, "Dr. Silva", "Cardiologia", "Hospital ABC - Contagem", "Retorno de rotina");
+        createAppointment(demo, today.plusDays(3), LocalTime.of(14, 30), 10080, "Dra. Souza", "Ortopedia", "Hospital XYZ - Betim", "Dores nas costas");
+        createAppointment(demo, today.plusDays(15), LocalTime.of(8, 0), 60, "Dr. Almeida", "Dermatologia", "Clínica Bem Estar - BH", "Levar exames anteriores");
+        createAppointment(demo, today.plusDays(45), null, null, "Dra. Lima", "Clínico Geral", "UBS Centro", null);
 
         Instant now = Instant.now();
         createHealthRecord(demo, now.minus(60, ChronoUnit.DAYS), 78.5, 175, 30, "masculino", null, null);
@@ -75,7 +76,7 @@ public class DataSeeder implements ApplicationRunner {
         createMedication(demo, "Amoxicilina", "500 mg", List.of("06:00", "14:00", "22:00"), today.minusDays(20), today.minusDays(13), null);
 
         User maria = createUser("Maria Souza", SECOND_EMAIL);
-        createAppointment(maria, today.plusDays(7), "Dr. Costa", "Oftalmologia", "Clínica Visão - Contagem", "Exame de vista");
+        createAppointment(maria, today.plusDays(7), null, null, "Dr. Costa", "Oftalmologia", "Clínica Visão - Contagem", "Exame de vista");
 
         log.info("Seed carregado. Login de demonstração: {} / {} (segundo usuário: {} / {})",
                 DEMO_EMAIL, DEMO_PASSWORD, SECOND_EMAIL, DEMO_PASSWORD);
@@ -116,10 +117,13 @@ public class DataSeeder implements ApplicationRunner {
         return userRepository.save(user);
     }
 
-    private void createAppointment(User owner, LocalDate date, String doctor, String specialty, String location, String extraInfo) {
+    private void createAppointment(User owner, LocalDate date, LocalTime time, Integer reminderMinutes, String doctor,
+                                   String specialty, String location, String extraInfo) {
         Appointment appointment = new Appointment();
         appointment.setOwner(owner);
         appointment.setDate(date);
+        appointment.setTime(time);
+        appointment.setReminderMinutes(reminderMinutes);
         appointment.setDoctor(doctor);
         appointment.setSpecialty(specialty);
         appointment.setLocation(location);
